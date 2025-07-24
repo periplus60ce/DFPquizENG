@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DFP Quiz Home</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="homeScreen">
+    <h1>Digital Force Protection Quiz</h1>
+    <p>Test your knowledge of cyber threats, tools, and tactics used in contested environments. Are you ready?</p>
+    <button onclick="startQuiz()">Start Quiz</button>
+  </div>
+
+  <div id="quizScreen" style="display:none">
+    <!-- Quiz questions will render here -->
+  </div>
+
+  <div id="resultScreen" style="display:none">
+    <h2>Quiz Complete</h2>
+    <p id="scoreMessage"></p>
+    <button onclick="location.reload()">Retake Quiz</button>
+  </div>
+  
+  <canvas class="matrix"></canvas>
+  
+  <script>
+	  document.addEventListener('contextmenu', event => event.preventDefault());
+	  document.addEventListener('keydown', event => {
+		if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'J' || event.key === 'C'))) {
+		  event.preventDefault();
+		}
+	  });
+  </script>
+
+  
+  <script>
+  const canvas = document.querySelector('.matrix');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const letters = Array(256).join("01").split("");
+  const fontSize = 14;
+  const columns = canvas.width / fontSize;
+  const drops = Array.from({ length: columns }).fill(1);
+
+  function draw() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#0F0";
+    ctx.font = `${fontSize}px monospace`;
+
+    for (let i = 0; i < drops.length; i++) {
+      const text = letters[Math.floor(Math.random() * letters.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  setInterval(draw, 33);
+</script>
+
+  <script type="module">
+    import questions from 'questions.js';
+
+    let current = 0;
+    let correct = 0;
+
+    const quizScreen = document.getElementById("quizScreen");
+    const resultScreen = document.getElementById("resultScreen");
+    const homeScreen = document.getElementById("homeScreen");
+    const scoreMessage = document.getElementById("scoreMessage");
+
+    function startQuiz() {
+      homeScreen.style.display = "none";
+      quizScreen.style.display = "block";
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const q = questions[current];
+      quizScreen.innerHTML = `<h2>Q${current + 1}: ${q.question}</h2>`;
+      q.choices.forEach((choice, index) => {
+        const btn = document.createElement("button");
+        btn.textContent = choice;
+        btn.onclick = () => handleAnswer(choice.charAt(0));
+        quizScreen.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(selectedLetter) {
+      const correctLetter = String.fromCharCode(parseInt(questions[current].correct, 2));
+      if (selectedLetter === correctLetter) correct++;
+
+      current++;
+      if (current < questions.length) {
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      quizScreen.style.display = "none";
+      resultScreen.style.display = "block";
+      const percent = Math.round((correct / questions.length) * 100);
+      scoreMessage.textContent = `You scored ${percent}% (${correct} out of ${questions.length})`;
+    }
+
+    window.startQuiz = startQuiz;
+  </script>
+</body>
+</html>
